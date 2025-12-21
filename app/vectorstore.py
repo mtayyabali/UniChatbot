@@ -65,23 +65,39 @@ def get_embeddings():
     return _embeddings
 
 
+def _persist_path() -> str:
+    # Use absolute path to avoid environment-dependent resolution
+    return os.path.abspath(settings.chroma_persist_dir)
+
+
 def _ensure_persist_dir():
-    os.makedirs(settings.chroma_persist_dir, exist_ok=True)
+    path = _persist_path()
+    os.makedirs(path, exist_ok=True)
     try:
-        test_path = os.path.join(settings.chroma_persist_dir, ".writable")
+        # set liberal permissions for local dev
+        os.chmod(path, 0o755)
+        test_path = os.path.join(path, ".writable")
         with open(test_path, "w") as f:
             f.write("ok")
         os.remove(test_path)
     except Exception as e:
-        raise RuntimeError(f"Chroma persist dir not writable: {settings.chroma_persist_dir} ({e})")
+        raise RuntimeError(f"Chroma persist dir not writable: {path} ({e})")
 
 
 def _get_chroma_client():
     global _chroma_client
     if _chroma_client is None:
         _ensure_persist_dir()
-        # Use PersistentClient for disk-backed storage
-        _chroma_client = chromadb.PersistentClient(path=settings.chroma_persist_dir)
+        try:
+            _chroma_client = chromadb.PersistentClient(path=_persist_path())
+        except Exception:
+            # Attempt a reset if the client fails to initialize (e.g., readonly sqlite)
+            try:
+                shutil.rmtree(_persist_path(), ignore_errors=True)
+                _ensure_persist_dir()
+                _chroma_client = chromadb.PersistentClient(path=_persist_path())
+            except Exception as e2:
+                raise RuntimeError(f"Failed to initialize Chroma PersistentClient at {_persist_path()}: {e2}")
     return _chroma_client
 
 
@@ -116,7 +132,7 @@ def build_chroma_from_documents(docs: List[Document]) -> Chroma:
 def reset_chroma():
     global _vectorstore_chroma, _chroma_client
     try:
-        shutil.rmtree(settings.chroma_persist_dir, ignore_errors=True)
+        shutil.rmtree(_persist_path(), ignore_errors=True)
     except Exception:
         pass
     _vectorstore_chroma = None
