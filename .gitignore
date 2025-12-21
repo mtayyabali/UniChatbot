@@ -210,6 +210,6 @@ data/chroma/*
 !data/chroma/.gitkeep
 
 # PDFs directory: track folder via .gitkeep, ignore all other files
-#!data/pdfs/
-#data/pdfs/*
-#!data/pdfs/.gitkeep
+!data/pdfs/
+data/pdfs/*
+!data/pdfs/.gitkeep
