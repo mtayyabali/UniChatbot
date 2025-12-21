@@ -7,6 +7,7 @@ langchain==0.3.7
 langchain-community==0.3.7
 langchain-chroma==0.1.4
 chromadb==0.5.18
+onnxruntime==1.18.1
 langchain-openai==0.2.11
 openai==1.59.8
 pypdf==5.1.0
