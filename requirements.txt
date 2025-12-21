@@ -1,0 +1,14 @@
+fastapi==0.126.0
+uvicorn==0.34.0
+python-dotenv==1.0.1
+pydantic==2.9.2
+pydantic-settings==2.11.0
+langchain==0.3.7
+langchain-community==0.3.7
+langchain-chroma==0.1.4
+chromadb==0.5.18
+langchain-openai==0.2.11
+openai==1.59.8
+pypdf==5.1.0
+weaviate-client==4.9.2
+langchain-google-genai==2.0.7
