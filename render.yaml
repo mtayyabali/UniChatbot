@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: unichatbot-api
+    runtime: python
+    plan: free
+    autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: EMBEDDINGS_PROVIDER
+        value: openai
+      - key: PDFS_DIR
+        value: data/pdfs
+      - key: CHROMA_PERSIST_DIR
+        value: data/chroma
+      - key: TOP_K
+        value: "4"
+      - key: OPENAI_API_KEY
+        generateValue: true
+      - key: WEAVIATE_HOST
+        value: ""
+      - key: WEAVIATE_API_KEY
+        value: ""
+    healthCheckPath: /health
+

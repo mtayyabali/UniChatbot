@@ -1,0 +1,20 @@
+{
+  "services": [
+    {
+      "name": "unichatbot-api",
+      "buildCommand": "pip install -r requirements.txt",
+      "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}",
+      "healthCheckPath": "/health"
+    }
+  ],
+  "variables": {
+    "EMBEDDINGS_PROVIDER": "openai",
+    "PDFS_DIR": "data/pdfs",
+    "CHROMA_PERSIST_DIR": "data/chroma",
+    "TOP_K": "4",
+    "OPENAI_API_KEY": "",
+    "WEAVIATE_HOST": "",
+    "WEAVIATE_API_KEY": ""
+  }
+}
+
