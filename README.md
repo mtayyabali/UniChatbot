@@ -10,10 +10,44 @@ University Course & Policy Chatbot built with FastAPI + LangChain. Retrieval-aug
 - Local PDF storage under `data/pdfs`
 
 ## Technology Stack
-- Python, FastAPI
-- LangChain
-- Embeddings: OpenAI / Ollama / Google Gemini
-- Vector DB: ChromaDB (local) / Weaviate (remote)
+- Runtime & Frameworks:
+  - Python 3.12
+  - FastAPI (HTTP + WebSocket endpoints)
+  - Uvicorn (ASGI server)
+- RAG & ML:
+  - LangChain core + community + text-splitters
+  - Embeddings providers: OpenAI (`langchain-openai`), Google Gemini (`langchain-google-genai`), Ollama (local)
+  - Vector stores: ChromaDB (local via `langchain-chroma`), Weaviate (remote via `langchain_community.vectorstores.Weaviate`)
+  - Tokenization: `tiktoken`
+  - ONNX Runtime (`onnxruntime`) for compatibility with ChromaDB dependencies
+- Data & Persistence:
+  - Local PDFs under `data/pdfs`
+  - Local Chroma persistent directory under `data/chroma`
+  - Remote Weaviate Cloud (recommended for free cloud persistence)
+- API & Networking:
+  - `requests`, `httpx` (transitive usage)
+  - WebSockets via FastAPI/Starlette
+- Observability & Utils:
+  - `rich` for formatting (transitive via Chroma)
+  - `pydantic` and `pydantic-settings` for config/validation
+- Testing:
+  - `pytest` (tests under `tests/`)
+- Deployment:
+  - Render (Docker runtime) with `Dockerfile`
+  - Optional native deploy configs: `Procfile`, `render.yaml`, `railway.json` for alternative hosts
+
+## Deployment
+
+The backend (BE) is deployed on Render using the Docker runtime:
+- Public base URL: https://unichatbot.onrender.com/
+- Health check: `GET /health` → `https://unichatbot.onrender.com/health`
+- REST APIs: `POST /ingest-pdfs`, `POST /chat`
+- WebSocket (streaming): `WS /ws/chat` → `wss://unichatbot.onrender.com/ws/chat`
+
+Notes
+- The service is containerized with a `Dockerfile` and served via `uvicorn` bound to the Render-provided `$PORT`.
+- WebSockets are supported by Render; the `/ws/chat` endpoint streams answer tokens and concludes with citations.
+- For persistent vectors in the cloud, prefer Weaviate (set `WEAVIATE_HOST`, `WEAVIATE_API_KEY`). Local Chroma persistence is suitable for local dev.
 
 ## Project Structure
 - `app/main.py` – FastAPI app and endpoints
@@ -118,6 +152,51 @@ curl -s -X POST http://127.0.0.1:8000/chat \
   -H "Content-Type: application/json" \
   -d '{"question": "How many credits are required to graduate?", "backend": "weaviate"}' | python3 -m json.tool
 ```
+
+## WebSocket Chat (streaming)
+
+Real-time streaming responses are available via the WebSocket endpoint:
+
+- Path: `GET /ws/chat` (WebSocket)
+- Message format (client -> server, JSON):
+  - `question` (string) – your question
+  - `backend` (string, optional) – `chroma` (default) or `weaviate`
+- Server sends:
+  - First: `{"type":"sources","sources":[{file,page},...],"backend":"...","top_k":N}`
+  - Then: streamed text chunks of the answer via `send_text`
+  - Finally: citations appended as plain text and `{"type":"done"}` JSON
+
+Example (Python client):
+```python
+import asyncio
+import json
+import websockets
+
+async def main():
+    async with websockets.connect("ws://127.0.0.1:8000/ws/chat") as ws:
+        await ws.send(json.dumps({
+            "question": "What is the exam retake policy?",
+            "backend": "weaviate"  # or "chroma"
+        }))
+        try:
+            while True:
+                msg = await ws.recv()
+                # messages can be JSON (sources/done/errors) or text chunks
+                if msg.startswith("{"):
+                    print("JSON:", msg)
+                else:
+                    print(msg, end="", flush=True)
+        except websockets.ConnectionClosed:
+            pass
+
+asyncio.run(main())
+```
+
+Notes
+- Provider selection is controlled by `EMBEDDINGS_PROVIDER` (`openai` default, `gemini`, `ollama`).
+- For `openai` streaming, set `OPENAI_API_KEY`; for `gemini`, set `GEMINI_API_KEY`.
+- The server strictly grounds answers on retrieved context. If no context is found, it returns a fallback message.
+- Cloud platforms like Render and Railway support WebSockets; ensure your service exposes the correct port and uses `uvicorn` with `--host 0.0.0.0 --port $PORT`.
 
 ## Example Questions
 - "What is the grading policy for CS101?"
