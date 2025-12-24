@@ -48,6 +48,7 @@ Notes
 - The service is containerized with a `Dockerfile` and served via `uvicorn` bound to the Render-provided `$PORT`.
 - WebSockets are supported by Render; the `/ws/chat` endpoint streams answer tokens and concludes with citations.
 - For persistent vectors in the cloud, prefer Weaviate (set `WEAVIATE_HOST`, `WEAVIATE_API_KEY`). Local Chroma persistence is suitable for local dev.
+- CORS: configure allowed origins via `CORS_ORIGINS` (comma-separated), e.g. `https://your-frontend.example.com,https://app.example.com`. Default is `*`.
 
 ## Project Structure
 - `app/main.py` – FastAPI app and endpoints
