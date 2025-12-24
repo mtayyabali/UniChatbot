@@ -6,6 +6,7 @@ from app.vectorstore import reset_vectorstore, get_vectorstore, as_retriever
 from app.api.ingest import router as ingest_router
 from app.api.chat import router as chat_router
 from app.api.ws import router as ws_router
+from app.api.upload import router as upload_router
 from app.rag.index import ingest_all
 from app.rag.prompts import build_prompt
 from app.rag.answer import answer_from_context
@@ -15,6 +16,7 @@ app = FastAPI(title="UniChatbot", version="0.1.0")
 app.include_router(ingest_router)
 app.include_router(chat_router)
 app.include_router(ws_router)
+app.include_router(upload_router)
 
 
 class IngestRequest(BaseModel):
@@ -83,20 +85,24 @@ def health():
 @app.post("/ingest-pdfs")
 def ingest(req: IngestRequest):
     backend = req.backend or "chroma"
+    if backend not in ("chroma", "weaviate"):
+        backend = "chroma"
     if req.force_reset:
-        reset_vectorstore(backend=backend)
+        reset_vectorstore(backend=backend)  # type: ignore[arg-type]
         # re-init to create clean store
-        get_vectorstore(backend=backend)
-    summary = ingest_all(backend=backend)
+        get_vectorstore(backend=backend)  # type: ignore[arg-type]
+    summary = ingest_all(backend=backend)  # type: ignore[arg-type]
     return summary
 
 
 @app.post("/chat")
 def chat(req: ChatRequest):
     backend = req.backend or "chroma"
+    if backend not in ("chroma", "weaviate"):
+        backend = "chroma"
     if not req.question or not req.question.strip():
         return {"error": "Question must not be empty."}
-    retriever = as_retriever(k=settings.top_k, backend=backend)
+    retriever = as_retriever(k=settings.top_k, backend=backend)  # type: ignore[arg-type]
     docs = retriever.get_relevant_documents(req.question.strip())
     # reuse existing chat flow
     prompt, sources = build_prompt(req.question.strip(), docs)

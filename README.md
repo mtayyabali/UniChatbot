@@ -134,6 +134,18 @@ curl -s -X POST http://127.0.0.1:8000/ingest-pdfs \
   -d '{"force_reset": true, "backend": "weaviate"}' | python3 -m json.tool
 ```
 
+### POST `/upload-pdfs`
+- Upload one or more PDF files to the server; they will be saved under `PDFS_DIR` (default `data/pdfs`).
+- Multipart form field name: `files`
+- Response JSON includes saved/skipped files and destination directory.
+- Example (two PDFs):
+```bash
+curl -s -X POST https://unichatbot.onrender.com/upload-pdfs \
+  -H "Content-Type: multipart/form-data" \
+  -F "files=@data/pdfs/sample-syllabus.pdf" \
+  -F "files=@data/pdfs/Student-Handbook-2022-07.pdf" | python3 -m json.tool
+```
+
 ### POST `/chat`
 - Ask a question; the app retrieves top `TOP_K` chunks from the selected backend and synthesizes an answer.
 - Request body:
