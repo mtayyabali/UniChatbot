@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     chunk_overlap: int = Field(default=int(os.getenv("CHUNK_OVERLAP", "200")))
     top_k: int = Field(default=int(os.getenv("TOP_K", "4")))
 
+    # CORS
+    cors_origins: str = Field(default=os.getenv("CORS_ORIGINS", "*"))
+
     # Weaviate (optional remote vector DB)
     weaviate_host: str = Field(default=os.getenv("WEAVIATE_HOST", ""))
     weaviate_api_key: str = Field(default=os.getenv("WEAVIATE_API_KEY", ""))
